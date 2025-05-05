@@ -105,6 +105,35 @@ def format_article_summary(article, summary):
         f"{'-'*60}\n"
     )
 
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+def send_email(subject, summaries, recipient_email, sender_email, sender_password):
+    # Create the email
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = recipient_email
+    msg['Subject'] = subject
+
+    # Create an HTML body with a bulleted list of summaries
+    body = "<h2>NYT Article Summaries</h2><ul>"
+    for article in summaries:
+        body += f"<li><strong>{article['headline']}</strong><br>{article['summary']}<br><a href='{article['url']}'>Read full article</a></li><br>"
+    body += "</ul>"
+
+    msg.attach(MIMEText(body, 'html'))
+
+    # Connect to Gmail's SMTP server
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
+        print("✅ Email sent successfully.")
+    except Exception as e:
+        print("❌ Failed to send email:", e)
+
 def main():
     query = input("Enter a search topic for NYT articles: ")
     articles = get_nyt_articles(query)
@@ -123,7 +152,7 @@ def main():
         else:
             print("No abstract available to summarize.")
 
-    # Email config
+        # Email config
     sender_email = os.getenv("EMAIL_ADDRESS")
     sender_password = os.getenv("EMAIL_PASSWORD")
     recipient_email = input("Enter recipient email address: ")
